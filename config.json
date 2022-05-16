@@ -1,0 +1,13 @@
+﻿{
+    "connectionString": "mongodb+srv://johnreycanillo:linagpang12345@canillocluster.qtv3j.mongodb.net/CanilloDatabase?retryWrites=true&w=majority",
+    "secret": "linagpang@12345",
+    "emailFrom": "info@node-mongo-signup-verification-api.com",
+    "smtpOptions": {
+        "host": "smtp.gmail.com",
+        "port": 587,
+        "auth": {
+            "user": "johnreycanillo26@gmail.com",
+            "pass": "linagpang12345"
+        }
+    }
+}
