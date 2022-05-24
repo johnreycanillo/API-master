@@ -5,19 +5,25 @@ const validateRequest = require('_middleware/validate-request');
 const authorize = require('_middleware/authorize')
 const Role = require('_helpers/role');
 const roleService = require('./role.service');
-const Role = require('../_helpers/role');
-const Role = require('../_helpers/role');
 
 // routes
 
-router.get('/', authorize(Role), getAll);
+router.get('/', authorize(Role.Admin), getAll);
+router.get('/all-enabled', authorize(Role.Admin), getAllEnable);
 router.get('/:id', authorize(), getById);
-router.post('/', authorize(Role), createSchema, create);
+router.post('/', authorize(Role.Admin), createSchema, create);
 router.put('/:id', authorize(), updateSchema, update);
+router.delete('/:id', authorize(), _delete);
 
 module.exports = router;
 
-function getAll(req, res, next) {
+function getAllEnable(res, next) {
+    roleService.getAllEnable()
+        .then(role => res.json(role))
+        .catch(next);
+}
+
+function getAll(res, next) {
     roleService.getAll()
         .then(role => res.json(role))
         .catch(next);
@@ -34,19 +40,36 @@ function getById(req, res, next) {
         .catch(next);
 }
 
-function createSchema(req, res, next) {
+function createSchema(req, next) {
     const schema = Joi.object({
-        role: Joi.string().valid(Role.Admin, Role.User).required()
+        
+        Name: Joi.string().required(),
+        
     });
     validateRequest(req, next, schema);
 }
 
 function create(req, res, next) {
-   roleService.create(req.body)
+    roleService.create(req.body)
         .then(role => res.json(role))
         .catch(next);
 }
 
+function updateSchema(req, next) {
+    const schemaRules = {
+    
+        Name: Joi.string().empty(''),
+    
+    };
+
+    // only admins can update role
+    if (req.user.role === Role.Admin) {
+        schemaRules.role = Joi.string().valid(Role.Admin, Role.User).empty('');
+    }
+
+    const schema = Joi.object(schemaRules).with('password', 'confirmPassword');
+    validateRequest(req, next, schema);
+}
 
 function update(req, res, next) {
     // users can update their own account and admins can update any account
@@ -54,7 +77,18 @@ function update(req, res, next) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    accountService.update(req.params.id, req.body)
+    roleService.update(req.params.id, req.body)
         .then(role => res.json(role))
+        .catch(next);
+}
+
+function _delete(req, res, next) {
+    // users can delete their own account and admins can delete any account
+    if (req.params.id !== req.user.id && req.user.role !== Role.Admin) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    roleService.delete(req.params.id)
+        .then(() => res.json({ message: 'Role deleted successfully' }))
         .catch(next);
 }
